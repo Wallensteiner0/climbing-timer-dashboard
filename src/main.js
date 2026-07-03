@@ -12,12 +12,16 @@ let setupView;
 
 function playSound(type) {
   if (type === 'end') {
-    if (settings.endSoundEnabled) soundEngine.playEnd();
+    if (settings.soundEnabled && settings.endSoundEnabled) soundEngine.playEnd();
     return;
   }
   if (!settings.soundEnabled) return;
   if (type === 'start') soundEngine.playStart();
-  if (type === 'phaseChange') soundEngine.playPhaseChange();
+  else if (type === 'countdownStart') soundEngine.playCountdownStart();
+  else if (type === 'phaseChange') soundEngine.playPhaseChange();
+  else if (type === 'warnMark') { if (settings.warnSoundEnabled) soundEngine.playWarnMark(); }
+  else if (type === 'criticalMark') { if (settings.criticalSoundEnabled) soundEngine.playCriticalMark(); }
+  else if (type === 'tick') { if (settings.criticalSoundEnabled) soundEngine.playTick(); }
 }
 
 const engine = new TimerEngine(settings, {
@@ -26,7 +30,13 @@ const engine = new TimerEngine(settings, {
 });
 
 function updateSettings(patch) {
-  settings = { ...settings, ...patch };
+  const merged = { ...settings, ...patch };
+  if ('soundEnabled' in patch) {
+    merged.warnSoundEnabled = patch.soundEnabled;
+    merged.criticalSoundEnabled = patch.soundEnabled;
+    merged.endSoundEnabled = patch.soundEnabled;
+  }
+  settings = merged;
   saveSettings(settings);
   engine.setSettings(settings);
   setupView.render(settings);
@@ -56,8 +66,7 @@ setupView = initSetupView(settings, {
 
 timerView = initTimerView({
   onStart: () => {
-    soundEngine.unlock();
-    engine.start();
+    soundEngine.unlock().then(() => engine.start());
   },
   onPause: () => engine.pause(),
   onResume: () => engine.resume(),

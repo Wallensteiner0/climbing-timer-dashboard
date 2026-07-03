@@ -39,13 +39,24 @@
               <input type="number" id="input-rounds" min="1" max="99" step="1" />
             </label>
             <label class="field">
-              <span>Warnphase ab (% Restzeit)</span>
-              <input type="number" id="input-warn" min="1" max="100" step="1" />
+              <span>Warnphase ab (Sekunden Restzeit)</span>
+              <input type="number" id="input-warn" min="1" max="600" step="1" />
+            </label>
+            <label class="field field-checkbox">
+              <input type="checkbox" id="input-warn-sound" />
+              <span>Ton bei Warnphase (30s-Marke)</span>
             </label>
             <label class="field">
-              <span>Kritische Phase ab (% Restzeit)</span>
-              <input type="number" id="input-critical" min="1" max="100" step="1" />
+              <span>Kritische Phase ab (Sekunden Restzeit)</span>
+              <input type="number" id="input-critical" min="1" max="600" step="1" />
             </label>
+            <label class="field field-checkbox">
+              <input type="checkbox" id="input-critical-sound" />
+              <span>Ton bei kritischer Phase (10s-Marke + Sekunden-Countdown)</span>
+            </label>
+            <p class="field-warning hidden" id="warn-critical-warning">
+              ⚠ Warnphase sollte mehr Restzeit haben als die kritische Phase, sonst wird die Warnphase nie erreicht.
+            </p>
             <label class="field field-checkbox">
               <input type="checkbox" id="input-sound" />
               <span>Signalton aktivieren</span>
@@ -59,7 +70,7 @@
           <div id="advanced-panel" class="advanced-panel hidden">
             <label class="field">
               <span>Schriftgröße Timer (vh)</span>
-              <input type="range" id="input-font-size" min="8" max="40" step="1" />
+              <input type="range" id="input-font-size" min="8" max="70" step="1" />
             </label>
             <label class="field">
               <span>Schriftart</span>

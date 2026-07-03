@@ -10,7 +10,7 @@ export class SoundEngine {
       this.ctx = new AudioContextClass();
     }
     if (this.ctx.state === 'suspended') {
-      this.ctx.resume();
+      this.ctx.resume().catch(() => {});
     }
     return this.ctx;
   }
@@ -33,7 +33,8 @@ export class SoundEngine {
 
   // Unlock/Init muss aus einer echten Nutzerinteraktion heraus aufgerufen werden.
   unlock() {
-    this._ensureContext();
+    const ctx = this._ensureContext();
+    return ctx.state === 'running' ? Promise.resolve() : ctx.resume().catch(() => {});
   }
 
   playStart() {
@@ -41,14 +42,27 @@ export class SoundEngine {
     this._beep(1320, 200, 180);
   }
 
+  playCountdownStart() {
+    this._beep(1568, 1000, 0);
+  }
+
   playPhaseChange() {
     this._beep(660, 220, 0);
   }
 
   playEnd() {
-    this._beep(523, 180, 0);
-    this._beep(659, 180, 200);
-    this._beep(784, 400, 400);
+    this._beep(880, 150, 0);
+    this._beep(1046, 150, 180);
+    this._beep(1318, 150, 360);
+  }
+
+  playWarnMark() {
+    this._beep(740, 200, 0);
+  }
+
+  playCriticalMark() {
+    this._beep(880, 150, 0);
+    this._beep(880, 150, 220);
   }
 
   playTick() {

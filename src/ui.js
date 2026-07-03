@@ -12,12 +12,15 @@ export function initSetupView(initialSettings, callbacks) {
     sound: $('input-sound'),
     soundAdvanced: $('input-sound-advanced'),
     endSound: $('input-end-sound'),
+    warnSound: $('input-warn-sound'),
+    criticalSound: $('input-critical-sound'),
     fontSize: $('input-font-size'),
     fontFamily: $('input-font-family'),
     bgColor: $('input-bg-color'),
     timerColor: $('input-timer-color'),
     warnColor: $('input-warn-color'),
     criticalColor: $('input-critical-color'),
+    warnCriticalWarning: $('warn-critical-warning'),
     advancedPanel: $('advanced-panel'),
     toggleAdvanced: $('btn-toggle-advanced'),
     resetDefaults: $('btn-reset-defaults'),
@@ -36,11 +39,13 @@ export function initSetupView(initialSettings, callbacks) {
     els.climb.value = formatSecondsAsMinSec(settings.climbSeconds);
     els.transition.value = formatSecondsAsMinSec(settings.transitionSeconds);
     els.rounds.value = settings.rounds;
-    els.warn.value = settings.warnPercent;
-    els.critical.value = settings.criticalPercent;
+    els.warn.value = settings.warnSeconds;
+    els.critical.value = settings.criticalSeconds;
     els.sound.checked = settings.soundEnabled;
     els.soundAdvanced.checked = settings.soundEnabled;
     els.endSound.checked = settings.endSoundEnabled;
+    els.warnSound.checked = settings.warnSoundEnabled;
+    els.criticalSound.checked = settings.criticalSoundEnabled;
     els.fontSize.value = settings.fontSize;
     els.fontFamily.value = settings.fontFamily;
     els.bgColor.value = settings.bgColor;
@@ -58,6 +63,7 @@ export function initSetupView(initialSettings, callbacks) {
 
     applyPreviewStyle(settings);
     updatePreviewClock(settings);
+    els.warnCriticalWarning.classList.toggle('hidden', settings.warnSeconds > settings.criticalSeconds);
   }
 
   function applyPreviewStyle(settings) {
@@ -94,10 +100,10 @@ export function initSetupView(initialSettings, callbacks) {
     callbacks.onChange({ rounds: Math.max(1, parseInt(els.rounds.value, 10) || 1) });
   });
   els.warn.addEventListener('input', () => {
-    callbacks.onChange({ warnPercent: clampPercent(els.warn.value) });
+    callbacks.onChange({ warnSeconds: clampSeconds(els.warn.value) });
   });
   els.critical.addEventListener('input', () => {
-    callbacks.onChange({ criticalPercent: clampPercent(els.critical.value) });
+    callbacks.onChange({ criticalSeconds: clampSeconds(els.critical.value) });
   });
   els.sound.addEventListener('change', () => {
     callbacks.onChange({ soundEnabled: els.sound.checked });
@@ -107,6 +113,12 @@ export function initSetupView(initialSettings, callbacks) {
   });
   els.endSound.addEventListener('change', () => {
     callbacks.onChange({ endSoundEnabled: els.endSound.checked });
+  });
+  els.warnSound.addEventListener('change', () => {
+    callbacks.onChange({ warnSoundEnabled: els.warnSound.checked });
+  });
+  els.criticalSound.addEventListener('change', () => {
+    callbacks.onChange({ criticalSoundEnabled: els.criticalSound.checked });
   });
   els.fontSize.addEventListener('input', () => {
     callbacks.onChange({ fontSize: parseInt(els.fontSize.value, 10) });
@@ -149,10 +161,10 @@ export function initSetupView(initialSettings, callbacks) {
   els.btnFullscreen.addEventListener('click', () => callbacks.onFullscreen());
   els.btnOpenTimer.addEventListener('click', () => callbacks.onOpenTimer());
 
-  function clampPercent(value) {
+  function clampSeconds(value) {
     const n = parseInt(value, 10);
     if (!Number.isFinite(n)) return 1;
-    return Math.min(100, Math.max(1, n));
+    return Math.min(600, Math.max(1, n));
   }
 
   render(initialSettings);

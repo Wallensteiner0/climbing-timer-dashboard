@@ -1,3 +1,7 @@
+const START_DELAY_MS = 1000;
+const CLIMB_END_HOLD_MS = 5000;
+const CLIMB_END_FADE_MS = 3000;
+
 // Zustandsautomat: Klettern <-> Räumzeit über N Durchläufe, dann "Fertig".
 export class TimerEngine {
   constructor(settings, callbacks = {}) {
@@ -14,6 +18,8 @@ export class TimerEngine {
 
   reset() {
     this._clearTimer();
+    this._clearStartDelay();
+    this.climbEndElapsedMs = null;
     this.schedule = this._buildSchedule();
     this.index = -1;
     this.status = 'ready';
@@ -21,6 +27,8 @@ export class TimerEngine {
     this.phaseDurationMs = first ? first.duration * 1000 : 0;
     this.phaseRemainingMs = this.phaseDurationMs;
     this.round = 1;
+    this.lastWarnLevel = 'normal';
+    this.lastWholeSecond = null;
     this._emitTick();
   }
 
@@ -28,8 +36,7 @@ export class TimerEngine {
     if (this.status === 'finished') this.reset();
     if (this.status !== 'ready') return;
     this.index = 0;
-    this.callbacks.onSound?.('start');
-    this._enterPhase(this.index);
+    this._beginClimbingWithDelay(this.index);
   }
 
   pause() {
@@ -57,6 +64,39 @@ export class TimerEngine {
     return schedule;
   }
 
+  _beginClimbingWithDelay(index) {
+    this._clearTimer();
+    this.climbEndElapsedMs = null;
+    this.status = 'starting';
+    this.callbacks.onSound?.('start');
+    this._emitTick();
+    this.startDelayHandle = setTimeout(() => {
+      this.startDelayHandle = null;
+      this.callbacks.onSound?.('countdownStart');
+      this._enterPhase(index);
+    }, START_DELAY_MS);
+  }
+
+  _clearStartDelay() {
+    if (this.startDelayHandle) {
+      clearTimeout(this.startDelayHandle);
+      this.startDelayHandle = null;
+    }
+  }
+
+  _effectiveStatus() {
+    return this.status === 'paused' ? this.statusBeforePause : this.status;
+  }
+
+  _getClimbEndOverlay() {
+    if (this.climbEndElapsedMs == null || this._effectiveStatus() !== 'transition') return null;
+    const elapsed = this.climbEndElapsedMs;
+    if (elapsed >= CLIMB_END_HOLD_MS + CLIMB_END_FADE_MS) return null;
+    if (elapsed < CLIMB_END_HOLD_MS) return { opacity: 1 };
+    const fadeElapsed = elapsed - CLIMB_END_HOLD_MS;
+    return { opacity: Math.max(0, 1 - fadeElapsed / CLIMB_END_FADE_MS) };
+  }
+
   _enterPhase(index) {
     if (index >= this.schedule.length) {
       this._finish();
@@ -67,6 +107,8 @@ export class TimerEngine {
     this.round = phase.round;
     this.phaseDurationMs = Math.max(0, phase.duration * 1000);
     this.phaseRemainingMs = this.phaseDurationMs;
+    this.lastWarnLevel = 'normal';
+    this.lastWholeSecond = null;
     this._startTicking();
     this._emitTick();
   }
@@ -82,11 +124,31 @@ export class TimerEngine {
     const delta = now - this.lastTickTime;
     this.lastTickTime = now;
     this.phaseRemainingMs -= delta;
+    if (this.climbEndElapsedMs != null) {
+      this.climbEndElapsedMs += delta;
+    }
     if (this.phaseRemainingMs <= 0) {
       this._advance();
     } else {
+      this._checkSoundMarks();
       this._emitTick();
     }
+  }
+
+  _checkSoundMarks() {
+    if (this.status !== 'climbing') return;
+    const remainingSeconds = this.phaseRemainingMs / 1000;
+    const level = this._computeWarnLevel(remainingSeconds);
+    if (level !== this.lastWarnLevel) {
+      if (level === 'warn') this.callbacks.onSound?.('warnMark');
+      if (level === 'critical') this.callbacks.onSound?.('criticalMark');
+      this.lastWarnLevel = level;
+    }
+    const wholeSecond = Math.ceil(remainingSeconds);
+    if (wholeSecond >= 1 && wholeSecond <= 5 && wholeSecond !== this.lastWholeSecond) {
+      this.callbacks.onSound?.('tick');
+    }
+    this.lastWholeSecond = wholeSecond;
   }
 
   _advance() {
@@ -99,6 +161,11 @@ export class TimerEngine {
     const nextPhase = this.schedule[this.index];
     if (finishedPhase.type === 'climbing' && nextPhase.type === 'transition') {
       this.callbacks.onSound?.('phaseChange');
+      this.climbEndElapsedMs = 0;
+    }
+    if (finishedPhase.type === 'transition' && nextPhase.type === 'climbing') {
+      this._beginClimbingWithDelay(this.index);
+      return;
     }
     this._enterPhase(this.index);
   }
@@ -119,12 +186,15 @@ export class TimerEngine {
     }
   }
 
-  getWarnLevel() {
-    if (this.status !== 'climbing' || !this.phaseDurationMs) return 'normal';
-    const percentRemaining = (this.phaseRemainingMs / this.phaseDurationMs) * 100;
-    if (percentRemaining <= this.settings.criticalPercent) return 'critical';
-    if (percentRemaining <= this.settings.warnPercent) return 'warn';
+  _computeWarnLevel(remainingSeconds) {
+    if (this._effectiveStatus() !== 'climbing') return 'normal';
+    if (remainingSeconds <= this.settings.criticalSeconds) return 'critical';
+    if (remainingSeconds <= this.settings.warnSeconds) return 'warn';
     return 'normal';
+  }
+
+  getWarnLevel() {
+    return this._computeWarnLevel(this.phaseRemainingMs / 1000);
   }
 
   getState() {
@@ -135,6 +205,7 @@ export class TimerEngine {
       phaseRemainingMs: this.phaseRemainingMs,
       phaseDurationMs: this.phaseDurationMs,
       warnLevel: this.getWarnLevel(),
+      climbEndOverlay: this._getClimbEndOverlay(),
     };
   }
 

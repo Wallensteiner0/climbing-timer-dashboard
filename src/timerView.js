@@ -4,12 +4,14 @@ const $ = (id) => document.getElementById(id);
 
 const STATUS_LABELS = {
   ready: 'Bereit',
+  starting: 'Start…',
   paused: 'Pausiert',
   finished: 'Fertig',
 };
 
 function statusLabel(state) {
   if (state.status === 'climbing') return `Klettern — Durchlauf ${state.round} / ${state.totalRounds}`;
+  if (state.status === 'transition' && state.climbEndOverlay) return `Zeit abgelaufen — Durchlauf ${state.round} / ${state.totalRounds}`;
   if (state.status === 'transition') return `Räumzeit — Durchlauf ${state.round} / ${state.totalRounds}`;
   return STATUS_LABELS[state.status] || '';
 }
@@ -22,6 +24,8 @@ export function initTimerView(callbacks) {
   const clockEl = $('timer-clock');
   const statusEl = $('timer-status');
   const menu = $('control-menu');
+  const pauseBtn = menu.querySelector('[data-action="pause"]');
+  const resumeBtn = menu.querySelector('[data-action="resume"]');
 
   let hideTimer = null;
 
@@ -70,11 +74,21 @@ export function initTimerView(callbacks) {
   }
 
   function renderState(state) {
-    const totalSeconds = Math.round(state.phaseRemainingMs / 1000);
-    clockEl.textContent = formatSecondsAsClock(totalSeconds);
+    if (state.climbEndOverlay) {
+      clockEl.textContent = formatSecondsAsClock(0);
+      clockEl.style.opacity = String(state.climbEndOverlay.opacity);
+    } else {
+      const totalSeconds = Math.round(state.phaseRemainingMs / 1000);
+      clockEl.textContent = formatSecondsAsClock(totalSeconds);
+      clockEl.style.opacity = '';
+    }
     statusEl.textContent = statusLabel(state);
     display.classList.toggle('warn', state.warnLevel === 'warn');
     display.classList.toggle('critical', state.warnLevel === 'critical');
+    display.classList.toggle('hold-critical', Boolean(state.climbEndOverlay));
+    display.classList.toggle('transition', state.status === 'transition' && !state.climbEndOverlay);
+    pauseBtn.classList.toggle('hidden', state.status === 'paused');
+    resumeBtn.classList.toggle('hidden', state.status !== 'paused');
   }
 
   return {

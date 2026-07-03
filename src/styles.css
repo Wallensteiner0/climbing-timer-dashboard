@@ -209,6 +209,24 @@ body {
   display: none;
 }
 
+.control-btn.hidden {
+  display: none;
+}
+
+.field-warning {
+  margin: -6px 0 4px;
+  padding: 8px 10px;
+  background: rgba(255, 84, 112, 0.12);
+  border: 1px solid var(--danger);
+  border-radius: 8px;
+  color: var(--danger);
+  font-size: 13px;
+}
+
+.field-warning.hidden {
+  display: none;
+}
+
 @media (max-width: 500px) {
   .advanced-panel {
     grid-template-columns: 1fr;
@@ -269,7 +287,7 @@ body {
   --timer-color: #ffffff;
   --timer-warn-color: #ffb300;
   --timer-critical-color: #ff3b3b;
-  --timer-font-size: 18vh;
+  --timer-font-size: 40vh;
   --timer-font-family: 'Segoe UI', system-ui, sans-serif;
 
   background: var(--timer-bg);
@@ -291,7 +309,7 @@ body {
   font-weight: 700;
   letter-spacing: 0.02em;
   line-height: 1;
-  transition: color 0.2s ease;
+  transition: color 0.2s ease, opacity 0.15s linear;
 }
 
 .preview-status,
@@ -314,6 +332,14 @@ body {
 .timer-display.critical .timer-clock {
   color: var(--timer-critical-color);
   animation: pulse 0.6s ease-in-out infinite;
+}
+
+.timer-display.hold-critical .timer-clock {
+  color: var(--timer-critical-color);
+}
+
+.timer-display.transition .timer-clock {
+  color: rgba(255, 235, 59, 0.5);
 }
 
 @keyframes pulse {
@@ -371,7 +397,7 @@ body {
   --timer-color: #ffffff;
   --timer-warn-color: #ffb300;
   --timer-critical-color: #ff3b3b;
-  --timer-font-size: 18vh;
+  --timer-font-size: 40vh;
   --timer-font-family: 'Segoe UI', system-ui, sans-serif;
 
   height: 100vh;
