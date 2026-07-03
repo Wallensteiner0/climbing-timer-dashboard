@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Climbing Timer Dashboard</title>
+  <link rel="stylesheet" href="src/styles.css" />
+  <link rel="icon" href="data:," />
+</head>
+<body>
+  <div id="app">
+
+    <section id="view-setup" class="view view-setup active">
+      <header class="app-header">
+        <h1>🧗 Climbing Timer Dashboard</h1>
+        <p class="subtitle">Kostenloser Timer für Kletterhallen &amp; kleine Wettbewerbe – läuft komplett im Browser, ohne Login.</p>
+      </header>
+
+      <div class="setup-layout">
+        <div class="settings-panel">
+
+          <div class="presets" id="presets">
+            <button type="button" class="preset-btn" data-preset="bouldern">Bouldern<br><small>4:00 / 1:00</small></button>
+            <button type="button" class="preset-btn" data-preset="boulderLang">Bouldern lang<br><small>5:00 / 1:00</small></button>
+            <button type="button" class="preset-btn" data-preset="lead">Lead<br><small>6:00 / 1:30</small></button>
+          </div>
+
+          <form id="settings-form" class="settings-form" autocomplete="off">
+            <label class="field">
+              <span>Kletterzeit (mm:ss oder Sekunden)</span>
+              <input type="text" id="input-climb" inputmode="numeric" placeholder="4:00" />
+            </label>
+            <label class="field">
+              <span>Räumzeit / Pause (mm:ss oder Sekunden)</span>
+              <input type="text" id="input-transition" inputmode="numeric" placeholder="1:00" />
+            </label>
+            <label class="field">
+              <span>Anzahl Durchläufe</span>
+              <input type="number" id="input-rounds" min="1" max="99" step="1" />
+            </label>
+            <label class="field">
+              <span>Warnphase ab (% Restzeit)</span>
+              <input type="number" id="input-warn" min="1" max="100" step="1" />
+            </label>
+            <label class="field">
+              <span>Kritische Phase ab (% Restzeit)</span>
+              <input type="number" id="input-critical" min="1" max="100" step="1" />
+            </label>
+            <label class="field field-checkbox">
+              <input type="checkbox" id="input-sound" />
+              <span>Signalton aktivieren</span>
+            </label>
+          </form>
+
+          <button type="button" id="btn-toggle-advanced" class="gear-btn" aria-expanded="false">
+            ⚙️ Erweiterte Einstellungen
+          </button>
+
+          <div id="advanced-panel" class="advanced-panel hidden">
+            <label class="field">
+              <span>Schriftgröße Timer (vh)</span>
+              <input type="range" id="input-font-size" min="8" max="40" step="1" />
+            </label>
+            <label class="field">
+              <span>Schriftart</span>
+              <select id="input-font-family">
+                <option value="'Segoe UI', system-ui, sans-serif">Segoe UI</option>
+                <option value="'Courier New', monospace">Courier New</option>
+                <option value="Georgia, serif">Georgia</option>
+                <option value="'Arial Black', sans-serif">Arial Black</option>
+                <option value="'Roboto Mono', monospace">Roboto Mono</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>Hintergrundfarbe</span>
+              <input type="color" id="input-bg-color" />
+            </label>
+            <label class="field">
+              <span>Timer-Farbe</span>
+              <input type="color" id="input-timer-color" />
+            </label>
+            <label class="field">
+              <span>Warnfarbe</span>
+              <input type="color" id="input-warn-color" />
+            </label>
+            <label class="field">
+              <span>Kritische Farbe</span>
+              <input type="color" id="input-critical-color" />
+            </label>
+            <label class="field field-checkbox">
+              <input type="checkbox" id="input-sound-advanced" />
+              <span>Sound an/aus</span>
+            </label>
+            <label class="field field-checkbox">
+              <input type="checkbox" id="input-end-sound" />
+              <span>Countdown-Endton an/aus</span>
+            </label>
+          </div>
+
+          <div class="settings-actions">
+            <button type="button" id="btn-reset-defaults" class="btn-secondary">Auf Standard zurücksetzen</button>
+          </div>
+        </div>
+
+        <div class="preview-panel">
+          <p class="preview-label">Vorschau</p>
+          <div class="preview-frame" id="preview-frame">
+            <div class="preview-clock" id="preview-clock">04:00</div>
+            <div class="preview-status" id="preview-status">Bereit</div>
+          </div>
+          <div class="preview-demo-toggle">
+            <span>Vorschau simulieren:</span>
+            <button type="button" class="chip active" data-demo="normal">Normal</button>
+            <button type="button" class="chip" data-demo="warn">Warnung</button>
+            <button type="button" class="chip" data-demo="critical">Kritisch</button>
+          </div>
+          <div class="preview-actions">
+            <button type="button" id="btn-fullscreen" class="btn-primary">Vollbild starten</button>
+            <button type="button" id="btn-open-timer" class="btn-secondary">Timer öffnen</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-timer" class="view view-timer">
+      <div class="timer-display" id="timer-display">
+        <div class="timer-clock" id="timer-clock">04:00</div>
+        <div class="timer-status" id="timer-status">Bereit</div>
+      </div>
+
+      <div class="control-menu" id="control-menu">
+        <button type="button" class="control-btn" data-action="start">▶ Start</button>
+        <button type="button" class="control-btn" data-action="pause">⏸ Pause</button>
+        <button type="button" class="control-btn" data-action="resume">▶ Weiter</button>
+        <button type="button" class="control-btn" data-action="reset">⟲ Zurücksetzen</button>
+        <button type="button" class="control-btn" data-action="fullscreen">⛶ Vollbild</button>
+        <button type="button" class="control-btn" data-action="settings">⚙ Einstellungen</button>
+      </div>
+    </section>
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
